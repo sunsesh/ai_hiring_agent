@@ -1,76 +1,85 @@
-import speech_recognition as sr
+"""
+core/voice.py
+
+NOTE:
+This module originally supported voice-based interview interaction.
+For now, it has been temporarily converted into a chat-based interview
+module for better stability in both local and cloud deployments.
+
+The file name remains `voice.py` so that the rest of the application
+does not need to change its imports.
+"""
+
 import streamlit as st
-from gtts import gTTS
-import os
-import time
 
-# SET THIS TO 'True' BEFORE UPLOADING TO GITHUB / STREAMLIT CLOUD 🚨
-#DEPLOYED_ON_CLOUD = True
-env_val = os.environ.get("DEPLOYED_ON_CLOUD", "false")
-DEPLOYED_ON_CLOUD=str(env_val).strip().lower() == "true"
-
-def speak(text):
-    """Smart TTS: Plays in browser if on Cloud, uses mpg123 if local"""
-    try:
-        # 1. Generate Speech
-        tts = gTTS(text=text, lang='en', slow=False)
-        filename = "temp_voice.mp3"
-        tts.save(filename)
-
-        # 2. Play Audio
-        if DEPLOYED_ON_CLOUD:
-            # Send audio file directly to the user's web browser!
-            with open(filename, "rb") as f:
-                st.audio(f.read(), format="audio/mp3", autoplay=True)
-            time.sleep(4) # Pause so the audio has time to play
-        else:
-            # Play locally via system player
-            os.system(f"mpg123 -q {filename}")
-
-        # 3. Cleanup
-        if os.path.exists(filename):
-            os.remove(filename)
-
-    except Exception as e:
-        st.error(f"TTS Error: {e}")
-
-def listen():
-    """Smart STT: Simulates input on web, uses real mic locally"""
-    if DEPLOYED_ON_CLOUD:
-        # Cloud servers have no mic! We simulate an answer so the app doesn't crash for judges.
-        st.info("🎙️ (Web Demo Mode) Simulating candidate voice response...")
-        time.sleep(3)
-        return "I have about 3 years of experience with this technology. I used it daily in my previous role to build scalable backend systems."
-
-    # --- LOCAL MIC LOGIC ---
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("🎙️ Listening... Please speak now.")
-        r.adjust_for_ambient_noise(source, duration=1)
-        try:
-            audio = r.listen(source, timeout=5, phrase_time_limit=15)
-            text = r.recognize_google(audio)
-            st.success(f"Candidate: {text}")
-            return text
-        except sr.WaitTimeoutError:
-            return "No response (Timeout)"
-        except sr.UnknownValueError:
-            return "No response (Could not understand)"
-        except Exception as e:
-            return f"Error: {str(e)}"
 
 def conduct_voice_interview(skills_to_test):
-    """Loops through skills and asks candidate about them."""
-    interview_transcript = {}
-    speak("Hello! I am the AI Hiring Assistant. Let's begin the interview.")
+    """
+    Temporary chat-based replacement for the voice interview flow.
 
-    for skill in skills_to_test:
-        question = f"Could you please explain your experience with {skill}?"
-        st.write(f"**AI:** {question}")
-        speak(question)
+    Displays interview questions and captures candidate responses as typed input.
 
-        answer = listen()
-        interview_transcript[skill] = answer
+    Args:
+        skills_to_test (list): Skills selected for interview questioning
 
-    speak("Thank you, the interview is now complete.")
-    return interview_transcript
+    Returns:
+        dict | None: A transcript dictionary after submission, otherwise None
+    """
+
+    if "interview_submitted" not in st.session_state:
+        st.session_state.interview_submitted = False
+
+    if "interview_transcript" not in st.session_state:
+        st.session_state.interview_transcript = {}
+
+    st.write("### 💬 AI Chat Interview")
+    st.info(
+        "Voice mode is temporarily disabled. "
+        "Please answer the following interview questions by typing your responses below."
+    )
+
+    if st.session_state.interview_submitted:
+        for i, skill in enumerate(skills_to_test, start=1):
+            question = f"Could you please explain your experience with {skill}?"
+            st.write(f"**AI Question {i}:** {question}")
+            st.text_area(
+                label=f"Your answer for {skill}",
+                value=st.session_state.interview_transcript.get(skill, ""),
+                height=120,
+                key=f"submitted_interview_answer_{i}_{skill}",
+                disabled=True
+            )
+
+        st.success("Interview answers submitted successfully.")
+        return st.session_state.interview_transcript
+
+    with st.form("chat_interview_form"):
+        current_transcript = {}
+
+        for i, skill in enumerate(skills_to_test, start=1):
+            question = f"Could you please explain your experience with {skill}?"
+            st.write(f"**AI Question {i}:** {question}")
+
+            answer = st.text_area(
+                label=f"Your answer for {skill}",
+                key=f"interview_answer_{i}_{skill}",
+                height=120,
+                placeholder=f"Type your experience with {skill} here..."
+            )
+
+            current_transcript[skill] = answer.strip() if answer else ""
+
+        submitted = st.form_submit_button("✅ Submit Interview Answers")
+
+        if submitted:
+            for skill in current_transcript:
+                if not current_transcript[skill]:
+                    current_transcript[skill] = "No response provided"
+
+            st.session_state.interview_transcript = current_transcript
+            st.session_state.interview_submitted = True
+            st.success("Interview answers submitted successfully.")
+            return st.session_state.interview_transcript
+
+    st.warning("Please answer the questions above and click 'Submit Interview Answers' to continue.")
+    return None

@@ -1,128 +1,247 @@
 # 🤖 AI Hiring Agent - Candidate Screening Portal
 
-An intelligent, fully automated AI hiring assistant built for efficient technical screening. Powered by **Groq** (Llama-3.3-70B) and **Streamlit**, this agent extracts skills from a candidate's resume, matches them against a job description, conducts a dynamic voice-based interview, and generates structured evaluation reports for HR.
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
+![Groq](https://img.shields.io/badge/LLM-Groq-green)
+![Status](https://img.shields.io/badge/Hackathon-Demo-orange)
+
+An intelligent AI hiring assistant built for efficient technical screening. Powered by **Groq** and **Streamlit**, this application extracts skills from a candidate's resume, matches them against a target job description, conducts an interactive AI interview, and generates structured evaluation reports for HR.
+
+For the current hackathon release, the interview experience is implemented as a **chat-based flow** to ensure reliable performance across local and Streamlit Cloud deployments.
+
+---
+
+## 📌 Overview
+
+This project demonstrates an end-to-end AI-assisted candidate screening workflow:
+
+- parse a job description
+- analyze a candidate resume
+- identify matched and missing skills
+- conduct an interactive AI-led interview
+- evaluate responses
+- generate HR-ready reports and training recommendations
 
 ---
 
 ## ✨ Features
-1. **Automated Skill Matching:** Parses Resume and Job Description (JD) to calculate a weighted fit score.
-2. **Dynamic Voice Interview:** Uses Text-to-Speech (gTTS) and Speech-to-Text (`SpeechRecognition`) to ask candidates to explain their experience with their top 5 technical and soft skills.
-3. **AI Interview Grading:** The LLM actively grades the audio transcript to catch padded resumes.
-4. **Custom Training Plans:** Automatically generates a time-estimated training plan for the skills the candidate lacks.
-5. **HR Reporting:** Securely compiles and exports a comprehensive evaluation JSON for HR review.
+
+- **Automated Skill Matching**
+  Parses the candidate resume and job description to calculate a weighted fit score.
+
+- **Interactive AI Interview**
+  Dynamically generates interview questions based on the top skills required for the role and captures candidate responses through a guided chat interface.
+
+- **AI-Based Interview Grading**
+  Uses the LLM to evaluate interview responses and help identify potential gaps between claimed and demonstrated expertise.
+
+- **Custom Training Plans**
+  Automatically generates a structured training plan for skills the candidate is missing.
+
+- **HR Reporting**
+  Compiles and exports a comprehensive JSON evaluation report for downstream HR review.
+
+---
+
+## 🚀 Hackathon Version Note
+
+The original prototype included a voice-based interview workflow using text-to-speech and speech-to-text. During testing across local and Streamlit Cloud environments, that approach introduced practical deployment issues, including:
+
+- overlapping audio playback in cloud mode
+- inconsistent text-to-speech responsiveness in local runs
+- browser and environment-specific microphone limitations
+
+To ensure a smooth, stable, and judge-friendly demo experience, the interview module has been temporarily adapted to a **chat-based interaction model**.
+
+The core hiring workflow remains the same:
+
+- job description analysis
+- resume-to-skill matching
+- AI-generated interview questions
+- candidate response evaluation
+- final reporting and training recommendations
+
+For compatibility with the existing codebase, the module is still named `core/voice.py`. In the current hackathon version, however, it functions as a **chat interview component** rather than a live voice interface.
+
+---
+
+## 🖼️ Demo Screenshot
+
+_Add a screenshot of the app here once available._
+
+Example placeholder:
+
+    screenshots/app_home.png
 
 ---
 
 ## 🛠️ Tech Stack
-* **Frontend:** Streamlit
-* **LLM Engine:** Groq API (`llama-3.3-70b-versatile`)
-* **Voice / Audio:** `SpeechRecognition`, `gTTS`, `mpg123`
-* **Data Handling:** Python, JSON, Pandas
+
+- **Frontend:** Streamlit
+- **LLM Engine:** Groq API
+- **Data Handling:** Python, JSON, Pandas
+- **Interview Mode (Current):** Streamlit chat/text inputs
+- **Original Voice Prototype:** `SpeechRecognition`, `gTTS`, `mpg123`
 
 ---
 
-## Setup & Installation (Local Development)
+## 📋 Candidate Flow
 
-Because this app uses hardware audio drivers for the voice interview, you **must** install system-level audio dependencies before installing the Python packages.
-
-### Step 1: Check your exact Python Version
-Open your terminal and run:
-```bash
-python3 --version
-```
-*(Take note of the version number, e.g., Python 3.11 or 3.12. You will need this for the next step!)*
-
-### Step 2: Install System Audio Drivers (Linux / Ubuntu / Mint)
-You need the C-headers for your specific Python version, plus PortAudio (for microphone input) and mpg123 (for safe audio playback).
-Replace `3.X` below with your version from Step 1 (e.g., `3.11`):
-```bash
-sudo apt-get update
-sudo apt-get install python3.X-dev portaudio19-dev mpg123
-```
-*(Mac Users: run `brew install portaudio` | Windows Users: run `pip install pipwin` then `pipwin install pyaudio`)*
-
-### Step 3: Create a Virtual Environment
-It is highly recommended to run this in an isolated environment.
-```bash
-git clone https://github.com/YOUR_USERNAME/ai-hiring-agent.git
-cd ai-hiring-agent
-
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### Step 4: Install Python Dependencies
-Now that your system headers are installed, `pyaudio` will compile successfully!
-```bash
-pip install -r requirements.txt
-```
-
-### Step 5: Configure your Groq API Key
-Create a file named `.env` in the root directory and add your Groq API key:
-```text
-GROQ_API_KEY=gsk_your_api_key_here
-```
-*(Note: Do not upload your `.env` file to GitHub! It is safely ignored via `.gitignore`)*
+- Candidate logs in through the sidebar
+- Candidate selects the **Position Applied For**
+- Candidate reviews or edits:
+  - job description
+  - resume text
+- System analyzes resume fit against the target role
+- AI generates targeted interview questions
+- Candidate answers interview questions in chat form
+- System grades responses and generates:
+  - skill match report
+  - summary evaluation
+  - training recommendations
+- HR report can be downloaded as JSON
 
 ---
 
-## 💻 Running the App
+## ⚙️ Setup & Installation (Local Development)
 
-To start the local Streamlit server, run:
-```bash
-streamlit run app.py
-```
-**Default Test Credentials:**
-* **Email:** candidate@email.com
-* **Password:** password123
+Clone the repository:
+
+    git clone https://github.com/sunsesh/ai_hiring_agent.git
+    cd ai_hiring_agent
+
+Create and activate a virtual environment:
+
+    python3 -m venv venv
+    source venv/bin/activate
+
+On Windows:
+
+    venv\Scripts\activate
+
+Install Python dependencies:
+
+    pip install -r requirements.txt
+
+Configure Streamlit secrets by creating this file:
+
+    .streamlit/secrets.toml
+
+Add the following values:
+
+    GROQ_API_KEY = "gsk_your_api_key_here"
+    DEPLOYED_ON_CLOUD = false
+
+> Do not commit secrets to GitHub.
+
+---
+
+## 💻 Running the App Locally
+
+Start the Streamlit app with:
+
+    streamlit run app.py
+
+Streamlit will typically open the app in your browser at:
+
+    http://localhost:8501
+
+Default test credentials:
+
+- **Email:** `candidate@email.com`
+- **Password:** `password123`
 
 ---
 
 ## ☁️ Cloud Deployment (Streamlit Community Cloud)
 
-This app is configured to be "Cloud Smart." Because cloud servers do not have physical microphones or speakers, the app includes a fallback mode to prevent crashes when deployed to the web.
+This app is designed to run cleanly on Streamlit Community Cloud.
 
-### How to Deploy
-1. **System Packages:** Ensure the `packages.txt` file is present in your repository. This tells Streamlit Cloud to automatically install the required Linux audio dependencies (`portaudio19-dev`, `mpg123`).
-2. **Enable Cloud Mode:** Open `core/voice.py` and set the toggle variable:
-   ```python
-   DEPLOYED_ON_CLOUD = True
-   ```
-   *When True, the app routes audio through the web browser (`st.audio`) and safely simulates microphone input for web users.*
-3. **Set Secrets:** Deploy on Streamlit Cloud, go to **Settings > Secrets**, and add your API key:
-   ```toml
-   GROQ_API_KEY="gsk_your_api_key_here"
-   ```
+Deployment steps:
 
----
+- Push your repository to GitHub
+- Create a new app in Streamlit Community Cloud
+- Select:
+  - repository: `sunsesh/ai_hiring_agent`
+  - branch: typically `main`
+  - main file path: `app.py`
 
-## Project Structure
+In **App Settings > Secrets**, add:
 
-```text
-ai-hiring-agent/
-│
-├── README.md               # Setup Instructions
-├── .env                    # Groq API Key (Git-ignored)
-├── .gitignore              # Ignored files
-├── requirements.txt        # Python dependencies
-├── packages.txt            # System dependencies (for Streamlit Cloud)
-├── app.py                  # Main Streamlit Frontend
-│
-├── core/                   # Core Business Logic
-│   ├── __init__.py
-│   ├── llm_engine.py       # Groq API connection and JSON formatting
-│   ├── skill_matcher.py    # JD vs Resume weighted scoring algorithm
-│   ├── voice.py            # STT / TTS and Cloud Audio Routing
-│   └── reporter.py         # AI Grading and Report Generation
-│
-└── utils/                  # Helper Utilities
-    ├── __init__.py
-    ├── mock_data.py        # Hackathon test data (JD, Resume)
-    └── hr_notifier.py      # Local HR report saving simulation
-```
+    GROQ_API_KEY = "gsk_your_api_key_here"
+    DEPLOYED_ON_CLOUD = true
+
+In the current hackathon version, the interview is chat-based, so browser microphone and speaker dependencies are not required for the core demo flow.
 
 ---
 
-## 🏆 Hackathon Context
-This project was built as a rapid prototype over a hackathon weekend. Due to time constraints, the user database and JD/Resume inputs are currently mocked in `utils/mock_data.py`. For a full production rollout, the architecture would decouple the candidate-facing app from an internal HR dashboard, utilizing a cloud database (e.g., PostgreSQL) and PDF extraction tools.
+## 🧱 Project Structure
+
+    ai_hiring_agent/
+    │
+    ├── README.md                  # Project documentation
+    ├── .gitignore                 # Ignored files
+    ├── requirements.txt           # Python dependencies
+    ├── packages.txt               # Optional system dependencies for deployment
+    ├── app.py                     # Main Streamlit application
+    │
+    ├── core/                      # Core business logic
+    │   ├── __init__.py
+    │   ├── llm_engine.py          # Groq API integration and LLM response handling
+    │   ├── skill_matcher.py       # JD vs Resume scoring and skill extraction
+    │   ├── voice.py               # Current chat-based interview module
+    │   └── reporter.py            # Interview grading and report generation
+    │
+    └── utils/                     # Supporting utilities
+        ├── __init__.py
+        ├── mock_data.py           # Mock auth, job descriptions, and resume data
+        └── hr_notifier.py         # HR report sharing / simulation utilities
+
+---
+
+## 🧪 Current Hackathon Scope
+
+This project was built as a rapid prototype for a hackathon setting.
+
+Current assumptions:
+
+- authentication is mock-based
+- job descriptions are selected from predefined options
+- resume text is preloaded but can be overridden by pasted input
+- interview interaction is chat-based for stability
+
+Potential production-grade enhancements for future versions:
+
+- database-backed candidate and recruiter workflows
+- multi-role HR dashboard
+- resume upload and PDF parsing
+- browser-native voice capture
+- persistent candidate session management
+- secure report storage and notifications
+
+---
+
+## 🏁 Demo-Friendly Summary
+
+This hackathon version prioritizes:
+
+- stable cloud deployment
+- clean live demonstration behavior
+- explainable AI evaluation flow
+- minimal setup friction for judges and reviewers
+
+The result is a practical end-to-end hiring workflow that demonstrates how LLMs can support candidate screening, interview evaluation, and training recommendations in a compact, deployable application.
+
+---
+
+## 📌 Notes
+
+- The current `core/voice.py` file is intentionally retained under its original name for compatibility, even though it now powers a chat-based interview flow.
+- Secrets such as API keys should be stored in Streamlit secrets and never committed to the repository.
+- If audio or voice support is reintroduced later, the app architecture can be extended without changing the overall screening pipeline.
+
+---
+
+## 📄 License
+
+This tool is open to all users; simply input your Groq API key as an environment variable to get started."

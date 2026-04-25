@@ -23,8 +23,34 @@ st.set_page_config(page_title="AI Hiring Agent", layout="wide")
 
 st.title("AI Hiring Agent - Candidate Portal")
 
+
+def normalize_skill_list(skill_items):
+    """
+    Convert matched/unmatched skill data into a clean list of skill names.
+    Handles strings as well as dictionaries.
+    """
+    normalized = []
+
+    for item in skill_items:
+        if isinstance(item, str):
+            normalized.append(item)
+        elif isinstance(item, dict):
+            if "skill" in item:
+                normalized.append(str(item["skill"]))
+            elif "name" in item:
+                normalized.append(str(item["name"]))
+            elif "Skill" in item:
+                normalized.append(str(item["Skill"]))
+            else:
+                normalized.append(str(item))
+        else:
+            normalized.append(str(item))
+
+    return normalized
+
+
 # -------------------------
-# Sidebar: Login + Job Pick
+# Sidebar: Login + Position
 # -------------------------
 st.sidebar.header("Login")
 
@@ -44,18 +70,14 @@ job_choice = job_options[selected_position]
 email_input = st.sidebar.text_input("Email")
 pass_input = st.sidebar.text_input("Password", type="password")
 
-
 # -------------------------
 # Authentication
 # -------------------------
 if email_input == AUTH["email"] and pass_input == AUTH["password"]:
     st.sidebar.success("Logged in successfully!")
 
-    # Assumes JOB_DESCRIPTION is:
-    # ["", "valid jd 1", "valid jd 2"]
     selected_job_description = JOB_DESCRIPTION[job_choice]
 
-    # Session state initialization
     if "job_choice" not in st.session_state:
         st.session_state.job_choice = job_choice
 
@@ -65,13 +87,29 @@ if email_input == AUTH["email"] and pass_input == AUTH["password"]:
     if "resume_text" not in st.session_state:
         st.session_state.resume_text = RESUME_TEXT
 
+    if "analysis" not in st.session_state:
+        st.session_state.analysis = None
+
+    if "interview_skills" not in st.session_state:
+        st.session_state.interview_skills = None
+
     if "final_reports" not in st.session_state:
         st.session_state.final_reports = None
 
-    # If user changes sidebar job choice, update JD text
+    if "interview_submitted" not in st.session_state:
+        st.session_state.interview_submitted = False
+
+    if "interview_transcript" not in st.session_state:
+        st.session_state.interview_transcript = None
+
     if st.session_state.job_choice != job_choice:
         st.session_state.job_choice = job_choice
         st.session_state.job_description_text = JOB_DESCRIPTION[job_choice]
+        st.session_state.analysis = None
+        st.session_state.interview_skills = None
+        st.session_state.final_reports = None
+        st.session_state.interview_submitted = False
+        st.session_state.interview_transcript = None
 
     st.write("### Review / Edit Input Data")
     col1, col2 = st.columns(2)
@@ -80,52 +118,125 @@ if email_input == AUTH["email"] and pass_input == AUTH["password"]:
         job_description_text = st.text_area(
             "Job Description",
             value=st.session_state.job_description_text,
-            height=150,
+            height=180,
             key="job_description_editor"
         )
         st.session_state.job_description_text = job_description_text
 
     with col2:
         resume_text = st.text_area(
-            "Candidate Resume (You may CTRL-A and paste your own text resume)",
+            "Candidate Resume",
             value=st.session_state.resume_text,
-            height=150,
+            height=180,
             key="resume_editor"
         )
         st.session_state.resume_text = resume_text
 
-    if st.button("Start AI Interview Process"):
+    st.divider()
+    st.subheader("Step 1: Analyze Resume Against Job Description")
+
+    if st.button("Analyze Candidate Fit"):
         current_job_description = st.session_state.job_description_text.strip()
         current_resume_text = st.session_state.resume_text.strip()
 
         if not current_job_description:
-            st.error("Please choose job 1 or 2, or enter a valid job description.")
+            st.error("Please choose a valid position or enter a job description.")
         elif not current_resume_text:
-            st.error("Please paste or enter a resume before starting.")
+            st.error("Please paste or enter a resume before continuing.")
         else:
-            with st.spinner("Analyzing JD and Resume..."):
+            with st.spinner("Analyzing job description and resume..."):
                 jd_skills = extract_jd_skills(current_job_description)
                 resume_skills = extract_resume_skills(current_resume_text)
 
                 analysis = analyze_and_score(jd_skills, resume_skills)
                 interview_skills = get_top_5_interview_skills(jd_skills)
 
-            st.success(f"Analysis Complete! Fit Score: {analysis['score_percentage']}%")
-            st.write("### 🎙️ Voice Interview Starting...")
+                st.session_state.analysis = analysis
+                st.session_state.interview_skills = interview_skills
+                st.session_state.final_reports = None
+                st.session_state.interview_submitted = False
+                st.session_state.interview_transcript = None
 
-            transcript = conduct_voice_interview(interview_skills)
+            st.success(f"Analysis complete! Resume Fit Score: {analysis['score_percentage']}%")
 
-            with st.spinner("Grading interview answers and generating reports..."):
-                grades = evaluate_interview_answers(transcript)
-                training = generate_training_plan(analysis["unmatched"])
+    # -------------------------
+    # Show analysis preview
+    # -------------------------
+    if st.session_state.analysis:
+        analysis = st.session_state.analysis
 
-                st.session_state.final_reports = compile_all_reports(
-                    analysis,
-                    training,
-                    transcript,
-                    grades
-                )
+        raw_matched_skills = analysis.get("matched", [])
+        raw_unmatched_skills = analysis.get("unmatched", [])
 
+        matched_skills = normalize_skill_list(raw_matched_skills)
+        unmatched_skills = normalize_skill_list(raw_unmatched_skills)
+
+        st.write("### Initial Analysis Summary")
+        st.metric("Resume Fit Score", f"{analysis['score_percentage']}%")
+
+        st.write("### Skill Match Overview")
+
+        col_match, col_unmatch = st.columns(2)
+
+        with col_match:
+            st.write(f"#### ✅ Matched Skills ({len(matched_skills)})")
+            if matched_skills:
+                matched_df = pd.DataFrame({
+                    "No.": range(1, len(matched_skills) + 1),
+                    "Matched Skills": matched_skills
+                })
+                st.dataframe(matched_df, use_container_width=True, hide_index=True)
+            else:
+                st.info("No matched skills identified.")
+
+        with col_unmatch:
+            st.write(f"#### ⚠️ Missing Skills ({len(unmatched_skills)})")
+            if unmatched_skills:
+                unmatched_df = pd.DataFrame({
+                    "No.": range(1, len(unmatched_skills) + 1),
+                    "Missing Skills": unmatched_skills
+                })
+                st.dataframe(unmatched_df, use_container_width=True, hide_index=True)
+            else:
+                st.info("No missing skills identified.")
+
+        if st.session_state.interview_skills:
+            st.write("**Skills selected for interview evaluation:**")
+            st.write(", ".join(map(str, st.session_state.interview_skills)))
+
+        st.divider()
+        st.subheader("Step 2: Complete AI Chat Interview")
+
+        conduct_voice_interview(st.session_state.interview_skills)
+
+        if st.session_state.interview_submitted and st.session_state.interview_transcript:
+            st.divider()
+            st.subheader("Step 3: Generate Final Evaluation Reports")
+
+            st.info(
+                "In a production deployment, the AI-generated evaluation would be shared with HR "
+                "through internal enterprise workflows such as email, ATS integration, or secure file transfer. "
+                "For hackathon/demo purposes only, the button below is exposed for visibility and testing. "
+                "This button would not be shown to a candidate in a real candidate-facing application."
+            )
+
+            if st.button("Generate Final Reports"):
+                with st.spinner("Evaluating interview answers and generating reports..."):
+                    grades = evaluate_interview_answers(st.session_state.interview_transcript)
+                    training = generate_training_plan(analysis["unmatched"])
+
+                    st.session_state.final_reports = compile_all_reports(
+                        analysis,
+                        training,
+                        st.session_state.interview_transcript,
+                        grades
+                    )
+
+                st.success("Final reports generated successfully.")
+
+    # -------------------------
+    # Display Reports
+    # -------------------------
     if st.session_state.final_reports:
         reports = st.session_state.final_reports
 
@@ -150,10 +261,10 @@ if email_input == AUTH["email"] and pass_input == AUTH["password"]:
             st.write(f"**Resume Missing Skills:** {reports['Report_B_Summary']['Total_Unmatched']}")
 
             st.divider()
-            st.write("### 🎙️ Voice Interview Evaluation")
+            st.write("### 💬 Chat Interview Evaluation")
             st.dataframe(pd.DataFrame(reports["Report_B_Summary"]["Interview_Grades"]))
 
-            st.write("### Raw Transcript")
+            st.write("### Interview Transcript")
             for skill, answer in reports["Report_B_Summary"]["Interview_Transcript"].items():
                 st.write(f"**Q: Experience with {skill}?**")
                 st.write(f"> {answer}")

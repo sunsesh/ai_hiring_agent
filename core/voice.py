@@ -5,7 +5,8 @@ import os
 import time
 
 # 🚨 SET THIS TO 'True' BEFORE UPLOADING TO GITHUB / STREAMLIT CLOUD 🚨
-DEPLOYED_ON_CLOUD = True
+#DEPLOYED_ON_CLOUD = True
+DEPLOYED_ON_CLOUD=os.environ.get("DEPLOYED_ON_CLOUD")
 
 def speak(text):
     """Smart TTS: Plays in browser if on Cloud, uses mpg123 if local"""

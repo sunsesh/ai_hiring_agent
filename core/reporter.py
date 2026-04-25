@@ -11,7 +11,7 @@ def generate_training_plan(unmatched_skills):
     Return exactly this JSON format:
     {{
         "plan":[
-            {{"skill": "Skill Name", "content": "Course or tutorial name", "duration": "X weeks"}}
+            {{"skill": "Skill Name", "content": "Course or tutorial name","syllabus":"two lines pf topics", "duration": "X weeks"}}
         ]
     }}
     """

@@ -34,11 +34,12 @@ DEPLOYED_ON_CLOUD = get_deployed_on_cloud()
 def speak(text: str):
     """
     Text-to-speech:
-    - On cloud: render audio in browser
+    - On cloud: render audio in browser without autoplay to avoid overlap
     - Local: play via mpg123 if available, else render in browser
     """
     try:
         t0 = time.time()
+        st.caption("🔊 Generating voice...")
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
             filename = tmp.name
@@ -49,18 +50,18 @@ def speak(text: str):
         t1 = time.time()
         st.caption(f"TTS generated in {t1 - t0:.2f}s")
 
+        with open(filename, "rb") as f:
+            audio_bytes = f.read()
+
         if DEPLOYED_ON_CLOUD:
-            with open(filename, "rb") as f:
-                audio_bytes = f.read()
-            st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+            # Important: no autoplay on cloud, otherwise clips overlap
+            st.audio(audio_bytes, format="audio/mp3")
         else:
-            # Try local system playback first
+            # Local blocking playback through system player
             exit_code = os.system(f'mpg123 -q "{filename}"')
             if exit_code != 0:
-                # Fallback to browser playback if mpg123 is unavailable
-                with open(filename, "rb") as f:
-                    audio_bytes = f.read()
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                st.warning("mpg123 not found. Falling back to browser audio player.")
+                st.audio(audio_bytes, format="audio/mp3")
 
     except Exception as e:
         st.error(f"TTS Error: {e}")
@@ -115,23 +116,40 @@ def listen() -> str:
 def conduct_voice_interview(skills_to_test):
     """
     Ask questions for each target skill and capture responses.
+
+    Cloud behavior:
+    - display question text
+    - do NOT auto-play audio, to avoid overlap
+    - simulate candidate response
+
+    Local behavior:
+    - speak question aloud
+    - capture spoken response from microphone
     """
     interview_transcript = {}
 
-    speak("Hello! I am the AI Hiring Assistant. Let's begin the interview.")
+    intro = "Hello! I am the AI Hiring Assistant. Let's begin the interview."
+    st.write(f"**AI:** {intro}")
+    if not DEPLOYED_ON_CLOUD:
+        speak(intro)
 
     for i, skill in enumerate(skills_to_test, start=1):
         question = f"Could you please explain your experience with {skill}?"
         st.write(f"**AI Question {i}:** {question}")
 
-        speak(question)
+        if not DEPLOYED_ON_CLOUD:
+            speak(question)
 
         t0 = time.time()
         answer = listen()
         t1 = time.time()
 
-        st.caption(f"Total response step for '{skill}': {t1 - t0:.2f}s")
+        st.caption(f"Response step for '{skill}' completed in {t1 - t0:.2f}s")
         interview_transcript[skill] = answer
 
-    speak("Thank you, the interview is now complete.")
+    closing = "Thank you, the interview is now complete."
+    st.write(f"**AI:** {closing}")
+    if not DEPLOYED_ON_CLOUD:
+        speak(closing)
+
     return interview_transcript

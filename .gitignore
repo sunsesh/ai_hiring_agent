@@ -1,0 +1,5 @@
+.env
+venv/
+__pycache__/
+hr_reports/
+temp_voice.mp3

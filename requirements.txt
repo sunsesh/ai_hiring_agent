@@ -1,0 +1,7 @@
+streamlit
+groq
+pandas
+SpeechRecognition
+pyaudio
+python-dotenv
+gTTS

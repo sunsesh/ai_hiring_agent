@@ -1,155 +1,76 @@
-import os
-import time
-import tempfile
-
 import speech_recognition as sr
 import streamlit as st
 from gtts import gTTS
+import os
+import time
 
+# SET THIS TO 'True' BEFORE UPLOADING TO GITHUB / STREAMLIT CLOUD 🚨
+#DEPLOYED_ON_CLOUD = True
+env_val = os.environ.get("DEPLOYED_ON_CLOUD", "false")
+DEPLOYED_ON_CLOUD=str(env_val).strip().lower() == "true"
 
-def get_deployed_on_cloud() -> bool:
-    """
-    Resolve deployment mode safely.
-    Priority:
-    1. Streamlit secrets
-    2. Environment variable
-    3. Default False
-    """
+def speak(text):
+    """Smart TTS: Plays in browser if on Cloud, uses mpg123 if local"""
     try:
-        if "DEPLOYED_ON_CLOUD" in st.secrets:
-            val = st.secrets["DEPLOYED_ON_CLOUD"]
-            if isinstance(val, bool):
-                return val
-            return str(val).strip().lower() == "true"
-    except Exception:
-        pass
-
-    env_val = os.environ.get("DEPLOYED_ON_CLOUD", "false")
-    return str(env_val).strip().lower() == "true"
-
-
-DEPLOYED_ON_CLOUD = get_deployed_on_cloud()
-
-
-def speak(text: str):
-    """
-    Text-to-speech:
-    - On cloud: render audio in browser without autoplay to avoid overlap
-    - Local: play via mpg123 if available, else render in browser
-    """
-    try:
-        t0 = time.time()
-        st.caption("🔊 Generating voice...")
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
-            filename = tmp.name
-
-        tts = gTTS(text=text, lang="en", slow=False)
+        # 1. Generate Speech
+        tts = gTTS(text=text, lang='en', slow=False)
+        filename = "temp_voice.mp3"
         tts.save(filename)
 
-        t1 = time.time()
-        st.caption(f"TTS generated in {t1 - t0:.2f}s")
-
-        with open(filename, "rb") as f:
-            audio_bytes = f.read()
-
+        # 2. Play Audio
         if DEPLOYED_ON_CLOUD:
-            # Important: no autoplay on cloud, otherwise clips overlap
-            st.audio(audio_bytes, format="audio/mp3")
+            # Send audio file directly to the user's web browser!
+            with open(filename, "rb") as f:
+                st.audio(f.read(), format="audio/mp3", autoplay=True)
+            time.sleep(4) # Pause so the audio has time to play
         else:
-            # Local blocking playback through system player
-            exit_code = os.system(f'mpg123 -q "{filename}"')
-            if exit_code != 0:
-                st.warning("mpg123 not found. Falling back to browser audio player.")
-                st.audio(audio_bytes, format="audio/mp3")
+            # Play locally via system player
+            os.system(f"mpg123 -q {filename}")
+
+        # 3. Cleanup
+        if os.path.exists(filename):
+            os.remove(filename)
 
     except Exception as e:
         st.error(f"TTS Error: {e}")
 
-    finally:
-        try:
-            if "filename" in locals() and os.path.exists(filename):
-                os.remove(filename)
-        except Exception:
-            pass
-
-
-def listen() -> str:
-    """
-    Speech-to-text:
-    - On cloud: simulate a response because server-side mic access is not available
-    - Local: use microphone + Google recognizer
-    """
+def listen():
+    """Smart STT: Simulates input on web, uses real mic locally"""
     if DEPLOYED_ON_CLOUD:
-        st.info("🎙️ Web Demo Mode: Simulating candidate voice response...")
-        return (
-            "I have about 3 years of experience with this technology. "
-            "I used it daily in my previous role to build scalable backend systems."
-        )
+        # Cloud servers have no mic! We simulate an answer so the app doesn't crash for judges.
+        st.info("🎙️ (Web Demo Mode) Simulating candidate voice response...")
+        time.sleep(3)
+        return "I have about 3 years of experience with this technology. I used it daily in my previous role to build scalable backend systems."
 
+    # --- LOCAL MIC LOGIC ---
     r = sr.Recognizer()
-
-    try:
-        with sr.Microphone() as source:
-            st.info("🎙️ Listening... Please speak now.")
-            r.adjust_for_ambient_noise(source, duration=0.8)
-
-            t0 = time.time()
+    with sr.Microphone() as source:
+        st.info("🎙️ Listening... Please speak now.")
+        r.adjust_for_ambient_noise(source, duration=1)
+        try:
             audio = r.listen(source, timeout=5, phrase_time_limit=15)
-            t1 = time.time()
-
             text = r.recognize_google(audio)
-            t2 = time.time()
-
-            st.caption(f"Audio capture: {t1 - t0:.2f}s | STT: {t2 - t1:.2f}s")
             st.success(f"Candidate: {text}")
             return text
-
-    except sr.WaitTimeoutError:
-        return "No response (Timeout)"
-    except sr.UnknownValueError:
-        return "No response (Could not understand)"
-    except Exception as e:
-        return f"Error: {str(e)}"
-
+        except sr.WaitTimeoutError:
+            return "No response (Timeout)"
+        except sr.UnknownValueError:
+            return "No response (Could not understand)"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
 def conduct_voice_interview(skills_to_test):
-    """
-    Ask questions for each target skill and capture responses.
-
-    Cloud behavior:
-    - display question text
-    - do NOT auto-play audio, to avoid overlap
-    - simulate candidate response
-
-    Local behavior:
-    - speak question aloud
-    - capture spoken response from microphone
-    """
+    """Loops through skills and asks candidate about them."""
     interview_transcript = {}
+    speak("Hello! I am the AI Hiring Assistant. Let's begin the interview.")
 
-    intro = "Hello! I am the AI Hiring Assistant. Let's begin the interview."
-    st.write(f"**AI:** {intro}")
-    if not DEPLOYED_ON_CLOUD:
-        speak(intro)
-
-    for i, skill in enumerate(skills_to_test, start=1):
+    for skill in skills_to_test:
         question = f"Could you please explain your experience with {skill}?"
-        st.write(f"**AI Question {i}:** {question}")
+        st.write(f"**AI:** {question}")
+        speak(question)
 
-        if not DEPLOYED_ON_CLOUD:
-            speak(question)
-
-        t0 = time.time()
         answer = listen()
-        t1 = time.time()
-
-        st.caption(f"Response step for '{skill}' completed in {t1 - t0:.2f}s")
         interview_transcript[skill] = answer
 
-    closing = "Thank you, the interview is now complete."
-    st.write(f"**AI:** {closing}")
-    if not DEPLOYED_ON_CLOUD:
-        speak(closing)
-
+    speak("Thank you, the interview is now complete.")
     return interview_transcript

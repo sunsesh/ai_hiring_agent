@@ -1,6 +1,6 @@
 # 🤖 AI Hiring Agent - Candidate Screening Portal
 
-<sub><sup>Disclaimer: Extensive and liberal use of AI (Claude and Gemini) has been made in producing the code. No originality is claimed. The only effort by the author is hand holding the AI (or is it the other way around?) for several iterations.</sup></sub>
+<sub>Disclaimer: AI tools were used to assist with code generation. The author reviewed, edited, and tested the code. It was a hand-holding collaboration between the author and the AI.The author held the AI’s hand—though it might have been the other way around.”</sub>
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)

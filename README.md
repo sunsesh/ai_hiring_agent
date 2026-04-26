@@ -1,6 +1,6 @@
 # 🤖 AI Hiring Agent - Candidate Screening Portal
 
-<sub>Disclaimer: AI tools were used to assist with code generation. The author reviewed, edited, and tested the code. It was a hand-holding collaboration between the author and the AI. The author held the AI’s hand—though it might have been the other way around.”</sub>
+<sub>Disclaimer: AI tools were used to assist with code generation. The author reviewed, edited, and tested the code. It was a hand-holding collaboration between the author and the AI. The author held the AI’s hand—though it might have been the other way around.</sub>
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)

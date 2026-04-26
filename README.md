@@ -1,5 +1,7 @@
 # 🤖 AI Hiring Agent - Candidate Screening Portal
 
+<sub><sup>Disclaimer: Extensive and liberal use of AI (Claude and Gemini) has been made in producing the code. No originality is claimed. The only effort by the author is hand holding the AI (or is it the other way around?) for several iterations.</sup></sub>
+
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
 ![Groq](https://img.shields.io/badge/LLM-Groq-green)

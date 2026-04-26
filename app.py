@@ -22,6 +22,7 @@ from utils.hr_notifier import share_with_hr
 st.set_page_config(page_title="AI Hiring Agent", layout="wide")
 
 st.title("AI Hiring Agent - Candidate Portal")
+st.caption("Disclaimer: AI tools were used to assist with code generation. The author reviewed, edited, and tested the code.")
 
 
 def normalize_skill_list(skill_items):

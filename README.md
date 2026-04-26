@@ -84,7 +84,7 @@ For compatibility with the existing codebase, the module is still named `core/vo
 ---
 
 ## 🏛️ System Architecture
-
+```mermaid
 flowchart TB
     %% Actors
     Candidate([🧑‍💻 Candidate])
@@ -126,6 +126,7 @@ flowchart TB
 
     %% Output
     Notifier -.->|Downloads JSON Report| HR
+```
 
 ### 🏗️ How this Architecture works (The Flow)
 

@@ -69,7 +69,7 @@ For compatibility with the existing codebase, the module is still named `core/vo
 
 ## 🖼️ Demo Screenshot
 
-!(app_home screenshot)(screenshots/app_home.png)
+![app-home screenshot](screenshots/app-home.png)
 
 ---
 

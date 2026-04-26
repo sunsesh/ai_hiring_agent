@@ -83,6 +83,60 @@ For compatibility with the existing codebase, the module is still named `core/vo
 
 ---
 
+## 🏛️ System Architecture
+
+flowchart TB
+    %% Actors
+    Candidate([🧑‍💻 Candidate])
+    HR([👩‍💼 HR Reviewer])
+    Groq((🧠 Groq API))
+
+    %% Frontend
+    Candidate -->|Interacts via UI| App[🖥️ app.py<br/>Streamlit Frontend]
+
+    %% Application Pipeline
+    subgraph Application Backend
+        direction TB
+        Data[utils/mock_data.py<br/>Mock Auth & Data]
+        Matcher[core/skill_matcher.py<br/>Skill Matcher]
+        Interview[core/voice.py<br/>Chat Interview Component]
+        Reporter[core/reporter.py<br/>Evaluation & Grading]
+        Notifier[utils/hr_notifier.py<br/>HR Export Utils]
+    end
+
+    %% LLM Integration Layer
+    subgraph LLM Layer
+        LLMEngine[core/llm_engine.py<br/>LLM Engine Orchestrator]
+    end
+
+    %% Data Flow
+    App -->|1. Load JD & Resume| Data
+    App -->|2. Send Data| Matcher
+    App <-->|3. Q & A Loop| Interview
+    App -->|4. Submit Answers| Reporter
+    App -->|5. Trigger Export| Notifier
+
+    %% Internal Module to LLM connections
+    Matcher -->|Extract/Match Skills| LLMEngine
+    Interview -->|Generate Questions| LLMEngine
+    Reporter -->|Grade Responses & Create Plan| LLMEngine
+
+    %% External API
+    LLMEngine <-->|Prompt / Completion| Groq
+
+    %% Output
+    Notifier -.->|Downloads JSON Report| HR
+
+### 🏗️ How this Architecture works (The Flow)
+
+1. **Frontend / Entry:** The `Candidate` interacts with `app.py` (Streamlit).
+2. **Data Mocking:** The app uses `utils/mock_data.py` to handle the hackathon constraints (mock logins, preloaded JDs, and baseline resumes).
+3. **Skill Matching:** `core/skill_matcher.py` compares the candidate's resume against the chosen Job Description to generate a fit score.
+4. **The Interview Loop:** The application calls `core/voice.py`. Even though it's named "voice" (for legacy reasons), it acts as a **Chat Interface**, looping questions and capturing candidate answers.
+5. **Grading & Reporting:** The answers are passed to `core/reporter.py`, which evaluates the candidate, identifies gaps, and creates a custom training plan.
+6. **LLM Abstraction:** `llm_engine.py` sits as a middle-layer. The Matcher, Interview, and Reporter modules *do not* talk to Groq directly. They all route through `llm_engine.py`, keeping your API calls clean and centralized.
+7. **Final Output:** Finally, `utils/hr_notifier.py` packages the outputs into a JSON file, simulating the hand-off to the `HR Reviewer`.
+
 ## 📋 Candidate Flow
 
 - Candidate logs in through the sidebar
@@ -242,4 +296,4 @@ The result is a practical end-to-end hiring workflow that demonstrates how LLMs 
 
 ## 📄 License
 
-This tool is open to all users; simply input your Groq API key as an environment variable to get started."
+This tool is open to all users; simply input your Groq API key as an environment variable (or a secret in streamlit site) to get started.
